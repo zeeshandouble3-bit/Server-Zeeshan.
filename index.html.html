@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muhammad Zeeshan - Advanced Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5; /* Indigo */
+            --secondary: #06b6d4; /* Cyan */
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --light: #ffffff;
+            --bg-gradient: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            --glass: rgba(255, 255, 255, 0.85);
+            --shadow: 0 10px 40px rgba(0,0,0,0.08);
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--light);
+            color: var(--text-main);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ------------------ LIVE ANIMATED BACKGROUND ------------------ */
+        #liveBgCanvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            /* Background will be drawn by JS */
+        }
+
+        /* Preloader */
+        #preloader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 99999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; transition: opacity 0.5s;
+        }
+        .loader-box {
+            width: 60px; height: 60px; border: 5px solid #e2e8f0;
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Auth Container */
+        body.login-active { overflow: hidden; }
+        .auth-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; transition: var(--transition);
+            overflow: hidden;
+        }
+        .auth-container.hidden { opacity: 0; pointer-events: none; transform: scale(1.1); }
+        
+        .glass-card {
+            background: var(--glass); backdrop-filter: blur(20px);
+            border-radius: 24px; padding: 50px; width: 100%; max-width: 450px;
+            border: 1px solid rgba(255,255,255,0.5); box-shadow: var(--shadow);
+            position: relative; z-index: 10;
+        }
+
+        /* New Logo SVG */
+        .logo-container {
+            width: 80px; height: 80px; margin: 0 auto 30px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 20px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--dark); }
+        .input-group input {
+            width: 100%; padding: 16px 20px; border: 2px solid rgba(255,255,255,0.5); border-radius: 12px;
+            background: rgba(255,255,255,0.6); font-size: 15px; transition: all 0.3s; outline: none;
+        }
+        .input-group input:focus { border-color: var(--primary); background: white; }
+
+        .btn-primary {
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; font-size: 16px; font-weight: 600; cursor: pointer;
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);
+            transition: all 0.3s;
+        }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(79, 70, 229, 0.3); }
+
+        /* Main Website */
+        .main-wrapper { opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+        .main-wrapper.visible { opacity: 1; pointer-events: all; }
+
+        /* Navbar */
+        nav {
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 100;
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(15px);
+            padding: 15px 50px; display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .nav-logo { display: flex; align-items: center; gap: 15px; text-decoration: none; }
+        .nav-logo-icon { width: 40px; height: 40px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .nav-logo-icon svg { width: 24px; height: 24px; fill: white; }
+        .nav-logo-text { font-family: 'Space Grotesk'; font-weight: 700; font-size: 20px; color: var(--dark); }
+
+        .nav-links a { text-decoration: none; color: var(--text-muted); font-weight: 500; margin-left: 30px; transition: color 0.3s; }
+        .nav-links a:hover { color: var(--primary); }
+
+        /* Notification Bell */
+        .notify-btn { background: none; border: none; cursor: pointer; position: relative; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .notify-btn svg { width: 24px; height: 24px; stroke: var(--text-muted); fill: none; }
+        .badge { position: absolute; top: 5px; right: 5px; width: 10px; height: 10px; background: var(--danger); border-radius: 50%; border: 2px solid white; display: none; }
+        
+        .dropdown-menu {
+            position: absolute; top: 60px; right: 0; width: 350px; 
+            background: white; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0; display: none; flex-direction: column; overflow: hidden; z-index: 200;
+        }
+        .dropdown-menu.show { display: flex; }
+        .dropdown-header { padding: 15px 20px; border-bottom: 1px solid #e2e8f0; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+        .dropdown-list { max-height: 400px; overflow-y: auto; }
+        .dropdown-item { padding: 15px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s; }
+        .dropdown-item:hover { background: #f8fafc; }
+        .dropdown-item small { color: var(--text-muted); font-size: 11px; }
+
+        /* User Panel */
+        .user-panel { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 10px 5px 5px; border-radius: 50px; background: #f1f5f9; }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--secondary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 150px 20px 100px; text-align: center; position: relative;
+        }
+        .hero-content { max-width: 900px; z-index: 2; }
+        .hero-top-text { font-family: 'Space Grotesk'; font-size: clamp(36px, 6vw, 60px); font-weight: 700; color: var(--dark); margin-bottom: 20px; opacity: 0; animation: fadeUp 1s ease forwards 0.2s; }
+        .hero-title { font-size: clamp(24px, 4vw, 36px); color: var(--primary); margin-bottom: 40px; opacity: 0; animation: fadeUp 1s ease forwards 0.4s; }
+        .hero-desc { font-size: 18px; color: var(--text-muted); max-width: 800px; margin: 0 auto 50px; line-height: 1.8; opacity: 0; animation: fadeUp 1s ease forwards 0.6s; }
+        .btn-group { display: flex; gap: 20px; justify-content: center; opacity: 0; animation: fadeUp 1s ease forwards 0.8s; }
+        .btn { padding: 16px 32px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; transition: all 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 10px; border: none; }
+        .btn-dark { background: var(--dark); color: white; }
+        .btn-outline { background: transparent; border: 2px solid var(--dark); color: var(--dark); }
+        .btn:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Sections */
+        .section { padding: 100px 50px; }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-title { font-family: 'Space Grotesk'; font-size: 42px; color: var(--dark); margin-bottom: 15px; }
+
+        /* Skills */
+        .skills-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; max-width: 1300px; margin: 0 auto; }
+        .skill-card { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: all 0.4s; border: 1px solid rgba(255,255,255,0.5); }
+        .skill-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(79, 70, 229, 0.1); border-color: var(--primary); }
+
+        /* Profile */
+        .profile-card { max-width: 1000px; margin: 0 auto; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-radius: 24px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.05); display: grid; grid-template-columns: 1fr 1.5fr; }
+        .profile-left { background: linear-gradient(135deg, var(--primary), var(--secondary)); padding: 60px 40px; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .profile-right { padding: 50px; }
+        .info-row { display: flex; align-items: center; padding: 20px 0; border-bottom: 1px solid #f1f5f9; }
+        .info-icon { width: 50px; height: 50px; background: #f1f5f9; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 20px; color: var(--primary); }
+
+        /* ------------------ MESSENGER SYSTEM ------------------ */
+        .messenger-fab {
+            position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 5px 20px rgba(37, 99, 235, 0.4); cursor: pointer; z-index: 999;
+            transition: transform 0.3s;
+        }
+        .messenger-fab svg { width: 28px; height: 28px; fill: white; }
+
+        .messenger-window {
+            position: fixed; bottom: 100px; right: 30px; width: 380px; height: 600px;
+            background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            z-index: 998; display: flex; flex-direction: column; overflow: hidden;
+            transform: scale(0); opacity: 0; transform-origin: bottom right;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .messenger-window.active { transform: scale(1); opacity: 1; }
+
+        /* Chat Layout */
+        .chat-sidebar { width: 100%; height: 100%; display: flex; flex-direction: column; }
+        .chat-header { background: var(--primary); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .chat-header-info small { opacity: 0.8; font-size: 12px; }
+
+        .search-box { padding: 15px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .search-box input { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; }
+
+        .contacts-list { flex: 1; overflow-y: auto; }
+        .contact-item { padding: 15px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s; }
+        .contact-item:hover { background: #f8fafc; }
+        .contact-item.active { background: #eff6ff; border-left: 4px solid var(--primary); }
+        .contact-avatar { width: 45px; height: 45px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary); }
+        .contact-info h4 { font-size: 15px; margin-bottom: 3px; }
+        .contact-info p { font-size: 12px; color: var(--text-muted); }
+
+        /* Conversation View */
+        .conversation-view { display: none; flex-direction: column; height: 100%; }
+        .conversation-view.active { display: flex; }
+        
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; background: #f8fafc; display: flex; flex-direction: column; gap: 15px; }
+        
+        .message-bubble { max-width: 75%; padding: 12px 16px; border-radius: 12px; position: relative; }
+        .message-bubble.sent { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 2px; }
+        .message-bubble.received { align-self: flex-start; background: white; border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .message-meta { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; opacity: 0.7; }
+
+        .chat-input-area { padding: 15px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; align-items: center; }
+        .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; }
+        .chat-input-area button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+
+        .chat-actions { display: flex; gap: 10px; padding: 10px; background: #f1f5f9; border-top: 1px solid #e2e8f0; }
+        .chat-actions button { flex: 1; padding: 8px; border: none; background: white; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 12px; }
+
+        /* Footer */
+        footer { background: var(--dark); color: white; padding: 80px 50px 40px; margin-top: 100px; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 50px; margin-bottom: 50px; }
+        .footer-col h3 { color: white; margin-bottom: 20px; font-size: 20px; }
+        .footer-col p, .footer-col a { color: #94a3b8; text-decoration: none; margin-bottom: 10px; display: block; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .profile-card { grid-template-columns: 1fr; }
+            .messenger-window { width: 100%; height: 100%; bottom: 0; right: 0; border-radius: 0; }
+        }
+    </style>
+</head>
+<body class="login-active">
+
+    <!-- Live Background Canvas -->
+    <canvas id="liveBgCanvas"></canvas>
+
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="loader-box"></div>
+        <p style="margin-top: 20px; color: var(--primary); font-weight: 600;">Initializing System...</p>
+    </div>
+
+    <!-- Auth Container -->
+    <div class="auth-container" id="authContainer">
+        <div class="glass-card">
+            <!-- New Logo -->
+            <div class="logo-container">
+                <svg viewBox="0 0 100 100" fill="white">
+                    <path d="M20 80 L20 20 L40 20 L40 60 L60 20 L80 20 L80 80 L60 80 L60 40 L40 80 Z" />
+                </svg>
+            </div>
+            
+            <h1 style="text-align:center; margin-bottom:10px; font-family:'Space Grotesk';" id="authTitle">Welcome Back</h1>
+            <p style="text-align:center; color:var(--text-muted); margin-bottom:30px;" id="authSub">Login to continue</p>
+
+            <div id="authError" style="background:#fee2e2; color:#b91c1c; padding:10px; border-radius:8px; margin-bottom:15px; display:none;"></div>
+
+            <!-- Login Form -->
+            <form id="loginForm">
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="Enter email" required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPass" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="btn-primary">Sign In</button>
+                <p style="text-align:center; margin-top:20px; font-size:14px; color:var(--text-muted);">
+                    No account? <span style="color:var(--primary); cursor:pointer; font-weight:600;" onclick="toggleAuth(false)">Register</span>
+                </p>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" style="display:none;">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="regName" placeholder="Your name" required>
+                </div>
+                <div class="input-group">
+                    <label>Your Custom ID (Unique)</label>
+                    <input type="text" id="regId" placeholder="e.g: 1001" required>
+                </div>
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="regEmail" placeholder="Your email" required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="regPass" placeholder="Create password" required>
+                </div>
+                <button type="submit" class="btn-primary">Create Account</button>
+                <p style="text-align:center; margin-top:20px; font-size:14px; color:var(--text-muted);">
+                    Have account? <span style="color:var(--primary); cursor:pointer; font-weight:600;" onclick="toggleAuth(true)">Login</span>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Website -->
+    <div class="main-wrapper" id="mainWrapper">
+        
+        <!-- Navbar -->
+        <nav>
+            <a href="#home" class="nav-logo">
+                <div class="nav-logo-icon">
+                    <svg viewBox="0 0 100 100" fill="white"><path d="M20 80 L20 20 L40 20 L40 60 L60 20 L80 20 L80 80 L60 80 L60 40 L40 80 Z"/></svg>
+                </div>
+                <div class="nav-logo-text">Zeeshan</div>
+            </a>
+            <div class="nav-links">
+                <a href="#home">Home</a>
+                <a href="#skills">Skills</a>
+                <a href="#profile">Profile</a>
+                <a href="#contact">Contact</a>
+            </div>
+            <div style="display:flex; align-items:center; gap:20px;">
+                <!-- Notifications -->
+                <div style="position:relative;">
+                    <button class="notify-btn" onclick="toggleDropdown('notifDropdown')">
+                        <svg viewBox="0 0 24 24" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        <span class="badge" id="notifBadge"></span>
+                    </button>
+                    <div class="dropdown-menu" id="notifDropdown">
+                        <div class="dropdown-header">
+                            <span>Notifications</span>
+                            <span style="color:var(--danger); cursor:pointer;" onclick="clearNotifications()">Clear</span>
+                        </div>
+                        <div class="dropdown-list" id="notifList">
+                            <div style="padding:20px; text-align:center; color:var(--text-muted);">No new notifications</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- User -->
+                <div class="user-panel" onclick="toggleDropdown('userDropdown')">
+                    <div class="user-avatar" id="navAvatar">U</div>
+                    <span style="font-size:14px; font-weight:600; color:var(--dark);" id="navName">User</span>
+                </div>
+                <div class="dropdown-menu" id="userDropdown" style="width:200px;">
+                    <div class="dropdown-item" onclick="logout()"><strong>Logout</strong></div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero -->
+        <section class="hero" id="home">
+            <div class="hero-content">
+                <h1 class="hero-top-text">Hi, I am Muhammad Zeeshan</h1>
+                <h2 class="hero-title">I Build Digital Experiences</h2>
+                <p class="hero-desc">
+                    I am an Advanced Programmer with 5 Years of Experience specializing in HTML, CSS, JavaScript, Google Apps Script, and GIS development. I transform complex ideas into powerful, elegant, and scalable code solutions that drive business success.
+                </p>
+                <div class="btn-group">
+                    <a href="#contact" class="btn btn-dark">Hire Me</a>
+                    <a href="#skills" class="btn btn-outline">My Skills</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Skills -->
+        <section class="section" id="skills">
+            <div class="section-header">
+                <h2 class="section-title">My Expertise</h2>
+                <p style="color:var(--text-muted);">Creating solutions with modern technologies</p>
+            </div>
+            <div class="skills-grid">
+                <div class="skill-card">
+                    <div style="font-size:40px; margin-bottom:15px;">&#60;/&#62;</div>
+                    <h3>HTML5 Architecture</h3>
+                    <p>Structuring semantic, high-performance web foundations with accessibility and SEO.</p>
+                </div>
+                <div class="skill-card">
+                    <div style="font-size:40px; margin-bottom:15px;">#</div>
+                    <h3>CSS Engineering</h3>
+                    <p>Crafting pixel-perfect, responsive interfaces with advanced animations.</p>
+                </div>
+                <div class="skill-card">
+                    <div style="font-size:40px; margin-bottom:15px;">JS</div>
+                    <h3>JavaScript Logic</h3>
+                    <p>Building dynamic applications with ES6+, DOM, and APIs.</p>
+                </div>
+                <div class="skill-card">
+                    <div style="font-size:40px; margin-bottom:15px;">G</div>
+                    <h3>Google Apps Script</h3>
+                    <p>Automating workflows and backend logic for Google Workspace.</p>
+                </div>
+                <div class="skill-card">
+                    <div style="font-size:40px; margin-bottom:15px;">GIS</div>
+                    <h3>GIS Mapping</h3>
+                    <p>Interactive mapping applications and spatial analysis.</p>
+                </div>
+                <div class="skill-card">
+                    <div style="font-size:40px; margin-bottom:15px;">&#9733;</div>
+                    <h3>Custom Solutions</h3>
+                    <p>Tailored software solutions for unique business needs.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Profile -->
+        <section class="section" id="profile" style="background:rgba(255,255,255,0.5);">
+            <div class="section-header">
+                <h2 class="section-title">Profile Details</h2>
+            </div>
+            <div class="profile-card">
+                <div class="profile-left">
+                    <div style="width:120px; height:120px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:50px;">MZ</div>
+                    <h2 style="margin-top:20px;">Muhammad Zeeshan</h2>
+                    <p>Code Architect</p>
+                </div>
+                <div class="profile-right">
+                    <div class="info-row">
+                        <div class="info-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        </div>
+                        <div>
+                            <h4 style="font-size:14px; color:var(--text-muted);">Email</h4>
+                            <p style="font-size:16px; font-weight:600;">zeeshandouble2@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"></path></svg>
+                        </div>
+                        <div>
+                            <h4 style="font-size:14px; color:var(--text-muted);">WhatsApp</h4>
+                            <p style="font-size:16px; font-weight:600;">+92 332 4453581</p>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        </div>
+                        <div>
+                            <h4 style="font-size:14px; color:var(--text-muted);">Location</h4>
+                            <p style="font-size:16px; font-weight:600;">Pakistan, Rawalpindi</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer id="contact">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h3>Muhammad Zeeshan</h3>
+                    <p>Building digital excellence with code.</p>
+                </div>
+                <div class="footer-col">
+                    <h3>Links</h3>
+                    <a href="#home">Home</a>
+                    <a href="#skills">Skills</a>
+                </div>
+                <div class="footer-col">
+                    <h3>Contact</h3>
+                    <p>zeeshandouble2@gmail.com</p>
+                </div>
+            </div>
+            <div style="text-align:center; border-top:1px solid #334155; padding-top:30px; color:#64748b;">
+                &copy; 2023 Muhammad Zeeshan. All Rights Reserved.
+            </div>
+        </footer>
+    </div>
+
+    <!-- Messenger FAB -->
+    <div class="messenger-fab" onclick="toggleMessenger()">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+
+    <!-- Messenger Window -->
+    <div class="messenger-window" id="messengerWindow">
+        <!-- Sidebar View -->
+        <div class="chat-sidebar" id="chatSidebar">
+            <div class="chat-header">
+                <div>
+                    <h3 style="margin:0;">Messages</h3>
+                    <small>Your ID: <span id="myIdDisplay">-</span></small>
+                </div>
+                <button onclick="toggleMessenger()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">&times;</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="searchIdInput" placeholder="Enter Friend ID to start chat...">
+                <button onclick="startNewChat()" style="width:100%; margin-top:10px; padding:8px; background:var(--secondary); color:white; border:none; border-radius:6px; cursor:pointer;">Find & Chat</button>
+            </div>
+            <div style="padding:10px; font-size:12px; color:var(--text-muted); text-align:center;">- Recent Contacts -</div>
+            <div class="contacts-list" id="contactsList">
+                <!-- Contacts will appear here -->
+            </div>
+        </div>
+
+        <!-- Conversation View -->
+        <div class="conversation-view" id="conversationView">
+            <div class="chat-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button onclick="backToList()" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">&larr;</button>
+                    <div>
+                        <h3 style="margin:0; font-size:16px;" id="chatFriendName">Friend Name</h3>
+                        <small>ID: <span id="chatFriendId">-</span></small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages here -->
+            </div>
+
+            <div class="chat-actions">
+                <button onclick="deleteChat()">🗑️ Delete</button>
+                <button onclick="saveChat()">💾 Save</button>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="msgInput" placeholder="Type message...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---------------------- CORE SETUP ----------------------
+        const DB_KEYS = {
+            USERS: 'mz_users',
+            MSGS: 'mz_messages',
+            SESSION: 'mz_session'
+        };
+
+        // ---------------------- LIVE BACKGROUND ----------------------
+        const canvas = document.getElementById('liveBgCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.color = `rgba(79, 70, 229, ${Math.random() * 0.5})`;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) this.reset();
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initBg() {
+            particles = [];
+            for (let i = 0; i < 50; i++) particles.push(new Particle());
+            animateBg();
+        }
+
+        function animateBg() {
+            // Create live gradient background
+            const gradient = ctx.createLinearGradient(0, 0, width, height);
+            gradient.addColorStop(0, '#ffffff'); // White base
+            gradient.addColorStop(0.5, '#f0f9ff'); // Very light blue tint
+            gradient.addColorStop(1, '#ffffff');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw particles
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            // Draw connecting lines
+            ctx.strokeStyle = 'rgba(79, 70, 229, 0.05)';
+            ctx.lineWidth = 1;
+            for (let a = 0; a < particles.length; a++) {
+                for (let b = a; b < particles.length; b++) {
+                    const dx = particles[a].x - particles[b].x;
+                    const dy = particles[a].y - particles[b].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 100) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[a].x, particles[a].y);
+                        ctx.lineTo(particles[b].x, particles[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateBg);
+        }
+
+        // ---------------------- AUTH SYSTEM ----------------------
+        function toggleAuth(isLogin) {
+            document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none';
+            document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
+            document.getElementById('authTitle').textContent = isLogin ? 'Welcome Back' : 'Create Account';
+            document.getElementById('authSub').textContent = isLogin ? 'Login to continue' : 'Set your Custom ID';
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('regName').value;
+            const id = document.getElementById('regId').value.trim();
+            const email = document.getElementById('regEmail').value;
+            const pass = document.getElementById('regPass').value;
+
+            let users = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '{}');
+            
+            if (users[id]) {
+                alert('This ID is already taken. Please choose another.');
+                return;
+            }
+
+            users[id] = { name, id, email, pass };
+            localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users));
+            
+            // Auto Login
+            const session = { name, id };
+            localStorage.setItem(DB_KEYS.SESSION, JSON.stringify(session));
+            
+            location.reload(); // Reload to enter main site
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            
+            const users = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '{}');
+            const user = Object.values(users).find(u => u.email === email && u.pass === pass);
+
+            if (user) {
+                const session = { name: user.name, id: user.id };
+                localStorage.setItem(DB_KEYS.SESSION, JSON.stringify(session));
+                location.reload();
+            } else {
+                document.getElementById('authError').textContent = 'Invalid credentials';
+                document.getElementById('authError').style.display = 'block';
+            }
+        });
+
+        function checkSession() {
+            const session = JSON.parse(localStorage.getItem(DB_KEYS.SESSION));
+            if (session) {
+                document.body.classList.remove('login-active');
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('mainWrapper').classList.add('visible');
+                document.getElementById('navName').textContent = session.name;
+                document.getElementById('navAvatar').textContent = session.name.charAt(0);
+                document.getElementById('myIdDisplay').textContent = session.id;
+                
+                // Start checking for messages
+                initMessengerLogic(session.id);
+            } else {
+                document.getElementById('preloader').style.display = 'none';
+                document.body.classList.add('login-active');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem(DB_KEYS.SESSION);
+            location.reload();
+        }
+
+        // ---------------------- MESSENGER LOGIC ----------------------
+        let currentSession = null;
+        let activeChatId = null;
+        let msgCheckInterval = null;
+
+        function initMessengerLogic(myId) {
+            currentSession = myId;
+            loadContacts();
+            // Poll for new messages every 2 seconds
+            msgCheckInterval = setInterval(() => {
+                checkNewMessages();
+            }, 2000);
+        }
+
+        function toggleMessenger() {
+            const win = document.getElementById('messengerWindow');
+            win.classList.toggle('active');
+        }
+
+        function toggleDropdown(id) {
+            document.getElementById(id).classList.toggle('show');
+        }
+
+        // Close dropdowns if clicked outside
+        window.onclick = (e) => {
+            if (!e.target.closest('.user-panel') && !e.target.closest('.notify-btn')) {
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('show'));
+            }
+        }
+
+        function startNewChat() {
+            const targetId = document.getElementById('searchIdInput').value.trim();
+            if (!targetId || targetId === currentSession) return;
+
+            const users = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '{}');
+            if (!users[targetId]) {
+                alert('User ID not found!');
+                return;
+            }
+
+            openConversation(targetId, users[targetId].name);
+        }
+
+        function openConversation(friendId, friendName) {
+            activeChatId = friendId;
+            document.getElementById('chatSidebar').style.display = 'none';
+            document.getElementById('conversationView').classList.add('active');
+            document.getElementById('chatFriendName').textContent = friendName;
+            document.getElementById('chatFriendId').textContent = friendId;
+            loadChatMessages();
+        }
+
+        function backToList() {
+            document.getElementById('chatSidebar').style.display = 'flex';
+            document.getElementById('conversationView').classList.remove('active');
+            activeChatId = null;
+            loadContacts();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('msgInput');
+            const text = input.value.trim();
+            if (!text || !activeChatId) return;
+
+            const timestamp = new Date().toLocaleTimeString();
+            const dateStamp = new Date().toLocaleDateString();
+
+            const msg = {
+                sender: currentSession,
+                receiver: activeChatId,
+                text: text,
+                time: timestamp,
+                date: dateStamp,
+                read: false
+            };
+
+            let msgs = JSON.parse(localStorage.getItem(DB_KEYS.MSGS) || '[]');
+            msgs.push(msg);
+            localStorage.setItem(DB_KEYS.MSGS, JSON.stringify(msgs));
+
+            input.value = '';
+            loadChatMessages(); // Refresh chat view
+        }
+
+        function loadChatMessages() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = '';
+            const msgs = JSON.parse(localStorage.getItem(DB_KEYS.MSGS) || '[]');
+            
+            const relevantMsgs = msgs.filter(m => 
+                (m.sender === currentSession && m.receiver === activeChatId) || 
+                (m.sender === activeChatId && m.receiver === currentSession)
+            );
+
+            relevantMsgs.forEach(m => {
+                const div = document.createElement('div');
+                div.className = `message-bubble ${m.sender === currentSession ? 'sent' : 'received'}`;
+                div.innerHTML = `
+                    ${m.text}
+                    <div class="message-meta">
+                        <span>${m.date}</span>
+                        <span>${m.time}</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function loadContacts() {
+            const container = document.getElementById('contactsList');
+            container.innerHTML = '';
+            
+            const msgs = JSON.parse(localStorage.getItem(DB_KEYS.MSGS) || '[]');
+            const users = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '{}');
+            
+            // Find unique contacts I've chatted with
+            const contacts = new Set();
+            msgs.forEach(m => {
+                if (m.sender === currentSession) contacts.add(m.receiver);
+                if (m.receiver === currentSession) contacts.add(m.sender);
+            });
+
+            if (contacts.size === 0) {
+                container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">No contacts yet.<br>Find a friend by ID above.</div>';
+                return;
+            }
+
+            contacts.forEach(id => {
+                if (users[id]) {
+                    const div = document.createElement('div');
+                    div.className = 'contact-item';
+                    div.onclick = () => openConversation(id, users[id].name);
+                    div.innerHTML = `
+                        <div class="contact-avatar">${users[id].name.charAt(0)}</div>
+                        <div class="contact-info">
+                            <h4>${users[id].name}</h4>
+                            <p>ID: ${id}</p>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                }
+            });
+        }
+
+        function checkNewMessages() {
+            const msgs = JSON.parse(localStorage.getItem(DB_KEYS.MSGS) || '[]');
+            const users = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '{}');
+            
+            // Check for unread messages
+            const unread = msgs.filter(m => m.receiver === currentSession && !m.read);
+            
+            if (unread.length > 0) {
+                document.getElementById('notifBadge').style.display = 'block';
+                
+                // Update notification list
+                const list = document.getElementById('notifList');
+                list.innerHTML = '';
+                unread.forEach(m => {
+                    const senderName = users[m.sender] ? users[m.sender].name : 'Unknown';
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item';
+                    item.innerHTML = `<strong>New Message</strong><br>${senderName}: ${m.text}<br><small>${m.time}</small>`;
+                    item.onclick = () => {
+                        openConversation(m.sender, senderName);
+                        toggleMessenger();
+                        toggleDropdown('notifDropdown');
+                    };
+                    list.appendChild(item);
+                });
+
+                // Mark as read logic if chat is open
+                if (activeChatId) {
+                    msgs.forEach(m => {
+                        if (m.receiver === currentSession && m.sender === activeChatId && !m.read) {
+                            m.read = true;
+                        }
+                    });
+                    localStorage.setItem(DB_KEYS.MSGS, JSON.stringify(msgs));
+                    loadChatMessages();
+                }
+            }
+        }
+
+        function deleteChat() {
+            if (!activeChatId) return;
+            if (confirm('Delete this conversation?')) {
+                let msgs = JSON.parse(localStorage.getItem(DB_KEYS.MSGS) || '[]');
+                msgs = msgs.filter(m => 
+                    !((m.sender === currentSession && m.receiver === activeChatId) || (m.sender === activeChatId && m.receiver === currentSession))
+                );
+                localStorage.setItem(DB_KEYS.MSGS, JSON.stringify(msgs));
+                loadChatMessages();
+                backToList();
+            }
+        }
+
+        function saveChat() {
+            const msgs = JSON.parse(localStorage.getItem(DB_KEYS.MSGS) || '[]');
+            const relevantMsgs = msgs.filter(m => 
+                (m.sender === currentSession && m.receiver === activeChatId) || 
+                (m.sender === activeChatId && m.receiver === currentSession)
+            );
+            
+            let textContent = `Chat with ${activeChatId}\n-------------------------\n`;
+            relevantMsgs.forEach(m => {
+                const who = m.sender === currentSession ? 'Me' : 'Friend';
+                textContent += `[${m.date} ${m.time}] ${who}: ${m.text}\n`;
+            });
+
+            const blob = new Blob([textContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Chat_${activeChatId}.txt`;
+            a.click();
+        }
+
+        function clearNotifications() {
+            document.getElementById('notifList').innerHTML = '<div style="padding:20px; text-align:center;">Cleared</div>';
+            document.getElementById('notifBadge').style.display = 'none';
+        }
+
+        // ---------------------- ON LOAD ----------------------
+        window.onload = () => {
+            initBg(); // Start animation
+            setTimeout(() => {
+                document.getElementById('preloader').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('preloader').style.display = 'none';
+                    checkSession();
+                }, 500);
+            }, 1500);
+        };
+    </script>
+</body>
+</html>
